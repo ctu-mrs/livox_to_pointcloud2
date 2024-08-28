@@ -7,16 +7,12 @@
   <maintainer email="porizou.electro@gmail.com">porizou</maintainer>
   <license>Apache 2.0</license>  <!-- Example license, replace with your actual choice -->
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>rclcpp</depend>
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <depend>roscpp</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>livox_ros_driver2</depend>  <!-- Assuming this is a real dependency -->
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
 
-  <export>
-    <build_type>ament_cmake</build_type>
-  </export>
 </package>

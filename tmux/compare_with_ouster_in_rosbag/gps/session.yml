@@ -1,0 +1,84 @@
+# do not modify these
+root: ./
+name: simulation
+socket_name: mrs
+attach: false
+tmux_options: -f /etc/ctu-mrs/tmux.conf
+# you can modify these
+pre_window: export UAV_NAME=uav1; export RUN_TYPE=simulation; export UAV_TYPE=f330; export SENSORS=garmin
+startup_window: status
+windows:
+  - roscore:
+      layout: tiled
+      panes:
+        - roscore
+  - gazebo:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch mrs_uav_gazebo_simulation simulation.launch world_file:=`rospack find uas_mapping_gazebo_resources`/worlds/test_lane.world gui:=true
+        # - waitForGazebo; rosservice call /mrs_drone_spawner/spawn "1 $UAV_TYPE --enable-rangefinder --enable-ground-truth --enable-vio --enable-realsense-front --use-gpu-ray --pos_file `pwd`/uav_pos.yaml" # --use-realistic-realsense version with realsense
+        - waitForGazebo; rosservice call /mrs_drone_spawner/spawn "1 $UAV_TYPE --enable-rangefinder --enable-ground-truth --enable-vio --enable-uas-mapping --pos_file `pwd`/../uav_pos.yaml" # version with two picoflexx and oakd cameras
+        - waitForControl; gz camera -c gzclient_camera -f $UAV_NAME; history -s gz camera -c gzclient_camera -f $UAV_NAME
+  - status:
+      layout: tiled
+      panes:
+        - waitForHw; roslaunch mrs_uav_status status.launch
+  - hw_api:
+      layout: tiled
+      panes:
+        - waitForTime; roslaunch mrs_uav_px4_api api.launch
+  - core:
+      layout: tiled
+      panes:
+        - waitForHw; roslaunch mrs_uav_core core.launch
+          platform_config:=`rospack find mrs_uav_gazebo_simulation`/config/mrs_uav_system/$UAV_TYPE.yaml
+          custom_config:=../config/custom_config.yaml
+          world_config:=../config/world_config.yaml
+          network_config:=../config/network_config.yaml
+  - pcl_filter_vio:
+      layout: even-vertical
+      panes:
+        - waitForControl; roslaunch mrs_pcl_tools pcl_filter.launch 
+          custom_config:=../config/pcl_depth_filter_config.yaml
+  - depth_filter:
+      layout: even-vertical
+      panes:
+        # - waitForHw; roslaunch depth_filter oakd_depth_filtering.launch   # realsense depth filter
+        - waitForHw; roslaunch uas_mapping_core oakd_depth_filtering.launch # oak-d depth filter
+  - voxblox:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch uas_mapping_core voxblox_sim.launch voxblox_config:=../config/voxblox_config.yaml
+  - octomap:
+      layout: even-vertical
+      panes:
+        - waitForHw; roslaunch uas_mapping_core octomap.launch
+          config_octomap_server:="../config/octomap.yaml"
+          world_frame_id:="$UAV_NAME/vio_origin"
+          config_octomap_visualizer:="../config/octomap_rviz_visualizer.yaml"
+          config_octomap_planner:="../config/pathfinder.yaml"
+          config_trajectory_generation:="../config/trajectory_generation.yaml"
+  - rviz:
+      layout: tiled
+      panes:
+        # - waitForControl; roslaunch mrs_open_vins_core rviz.launch
+        - waitForControl; rosrun rviz rviz -d ../config/rviz.rviz
+        - waitForControl; export UAV_TYPE=x500; roslaunch mrs_rviz_plugins load_robot.launch # x500 is used only for rviz viz
+        - waitForControl; roslaunch mrs_rviz_plugins rviz_interface.launch
+  - circle_detector:
+      layout: even-vertical
+      panes:
+        - waitForHw; roslaunch capra_landolt_ros capra_landolt.launch camera_type:="oakd"
+  - takeoff:
+      layout: tiled
+      panes:
+        - waitForHw; roslaunch mrs_uav_autostart automatic_start.launch
+        - 'waitForControl; rosservice call /$UAV_NAME/hw_api/arming 1; sleep 2; rosservice call /$UAV_NAME/hw_api/offboard'
+  - goto:
+      layout: tiled
+      panes:
+        - 'history -s rosservice call /$UAV_NAME/control_manager/goto \"goal: \[0.0, 10.0, 1.5, 0.0\]\"'
+  - layout:
+      layout: tiled
+      panes:
+        - waitForControl; sleep 3; ~/.i3/layout_manager.sh ./layout.json

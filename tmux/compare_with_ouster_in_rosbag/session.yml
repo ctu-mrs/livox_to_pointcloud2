@@ -1,0 +1,43 @@
+# do not modify these
+root: ./
+name: simulation
+socket_name: mrs
+attach: false
+tmux_options: -f /etc/ctu-mrs/tmux.conf
+# you can modify these
+pre_window: export UAV_NAME=uav49; export RUN_TYPE=simulation; export UAV_TYPE=f330; export SENSORS=garmin
+startup_window: status
+windows:
+  - roscore:
+      layout: tiled
+      panes:
+        - roscore
+  - rosbag:
+      layout: tiled
+      panes:
+        - waitForRos; rosbag play "/media/michal/Extreme SSD/alex_files/72_2024_04_23_14_05_57_livox_ouster_long_flight" -l 
+  - ouster_packets:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch livox_to_pointcloud2 ouster_replay.launch ouster_ns:=uav49/os_nodelet metadata:=/home/michal/10.10.20-metadata.json tf_prefix:=uav49
+  - livox_to_pointcloud:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch livox_to_pointcloud2 livox_to_pointcloud2.launch
+  - point_lio:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch point_lio mapping_mid360.launch
+  - mins:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch mrs_mins_core rosbag_livox.launch
+  - rviz:
+      layout: tiled
+      panes:
+        # - waitForControl; roslaunch mrs_open_vins_core rviz.launch
+        - waitForRos; rosrun rviz rviz -d ./rviz.rviz
+  - layout:
+      layout: tiled
+      panes:
+        - waitForRos; sleep 3; ~/.i3/layout_manager.sh ./layout.json

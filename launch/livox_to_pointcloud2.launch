@@ -1,0 +1,9 @@
+<launch>
+  <arg name="UAV_NAME" default="$(env UAV_NAME)" />
+    <!-- Node launch -->
+    <node pkg="livox_to_pointcloud2" type="livox_to_pointcloud2_node" name="livox_to_pointcloud2_node" output="screen">
+        <!-- You can add parameters and remappings here if needed -->
+      <remap from="livox_pointcloud" to="/$(arg UAV_NAME)/livox/lidar" />
+      <remap from="converted_pointcloud2" to="/$(arg UAV_NAME)/livox/lidar_converted" />
+    </node>
+</launch>

@@ -1,10 +1,16 @@
-#include "rclcpp/rclcpp.hpp"
+#include "ros/ros.h"
 #include "livox_to_pointcloud2.hpp"
 
-int main(int argc, char* argv[])
+int main(int argc, char **argv)
 {
-    rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<LivoxToPointCloud2>());
-    rclcpp::shutdown();
+    // Initialize the ROS system
+    ros::init(argc, argv, "livox_to_pointcloud2_node");
+
+    // Create an instance of your node's main class
+    LivoxToPointCloud2 livox_to_pointcloud2;
+
+    // Handle ROS communication events
+    ros::spin();
+
     return 0;
 }
